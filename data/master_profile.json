@@ -1,0 +1,156 @@
+{
+  "personal_info": {
+    "name": "Abiyan Ahmed",
+    "email": "abiyanahmed777@gmail.com",
+    "phone": "7019972653",
+    "location": "Bengaluru / Kolar, Karnataka, India",
+    "linkedin": "https://www.linkedin.com/in/abiyan-ahmed-bb8b81332",
+    "github": "https://github.com/AD700-cam",
+    "portfolio": "https://abxn.dev"
+  },
+  "education": [
+    {
+      "degree": "Bachelor of Computer Applications (BCA)",
+      "institution": "Smt. Danamma Channabasavaiah College",
+      "university": "Bengaluru North University",
+      "start_year": "",
+      "end_year": "2027",
+      "cgpa": "",
+      "specialization": "Software Development, Computer Applications, and Data Analysis"
+    }
+  ],
+  "skills": {
+    "programming_languages": [
+      "TypeScript",
+      "JavaScript"
+    ],
+    "web_development": [
+      "Next.js",
+      "React",
+      "tRPC",
+      "Progressive Web Apps (PWA)"
+    ],
+    "databases": [
+      "Prisma"
+    ],
+    "ai_ml": [],
+    "tools": [
+      "Git",
+      "GitHub",
+      "Advanced Excel",
+      "Web Deployment"
+    ],
+    "cloud": [],
+    "other": [
+      "Data Modeling",
+      "Service Workers",
+      "WebSockets",
+      "T3 Stack"
+    ]
+  },
+  "certifications": [],
+  "projects": [
+    {
+      "project_name": "Collaborative Editor",
+      "description": "A real-time synchronization engine guaranteeing data integrity across concurrent multi-user sessions.",
+      "technologies": [
+        "JavaScript",
+        "WebSockets"
+      ],
+      "github_link": "",
+      "live_link": "",
+      "role": "Developer",
+      "features": [
+        "Real-time sync",
+        "Multi-user session support"
+      ],
+      "outcomes": [
+        "Efficient state management",
+        "Data integrity across concurrent users"
+      ]
+    },
+    {
+      "project_name": "AI Development Workspace",
+      "description": "A type-safe IDE environment using modular architecture and strict typing.",
+      "technologies": [
+        "TypeScript"
+      ],
+      "github_link": "",
+      "live_link": "",
+      "role": "Developer",
+      "features": [
+        "Modular architecture",
+        "Strict typing",
+        "Tool development acceleration"
+      ],
+      "outcomes": [
+        "25% reduction in runtime errors"
+      ]
+    },
+    {
+      "project_name": "HI BUN Cafe System",
+      "description": "A comprehensive full-stack business solution automating inventory tracking with a dynamic digital storefront.",
+      "technologies": [
+        "Full-Stack (unspecified)"
+      ],
+      "github_link": "",
+      "live_link": "",
+      "role": "Developer",
+      "features": [
+        "Inventory tracking automation",
+        "Digital storefront integration"
+      ],
+      "outcomes": [
+        "Enhanced brand presence",
+        "Improved sales operations"
+      ]
+    },
+    {
+      "project_name": "Utility & Tracking Apps",
+      "description": "Apps automating fiscal utility calculations and academic scheduling via automated data validation.",
+      "technologies": [],
+      "github_link": "",
+      "live_link": "",
+      "role": "Developer",
+      "features": [
+        "Fiscal utility calculation automation",
+        "Academic scheduling",
+        "Data validation"
+      ],
+      "outcomes": [
+        "Reduced manual entry time"
+      ]
+    }
+  ],
+  "work_experience": [
+    {
+      "company": "CODTECH",
+      "role": "Software Development Intern",
+      "start_date": "",
+      "end_date": "",
+      "responsibilities": [
+        "Designed and deployed a mobile-first PWA for a high-traffic e-commerce platform",
+        "Implemented Service Workers for offline support and optimized asset caching",
+        "Engineered scalable relational data models to manage complex product hierarchies",
+        "Synchronized dynamic UIs with reliable backend state transitions"
+      ],
+      "achievements": [
+        "Significantly boosted user accessibility and engagement",
+        "Increased application reliability and performance by 30%"
+      ]
+    }
+  ],
+  "achievements": [],
+  "languages": [],
+  "career_goals": {
+    "short_term": "",
+    "long_term": ""
+  },
+  "interests": [],
+  "resume_versions": [],
+  "social_profiles": {
+    "linkedin": "https://www.linkedin.com/in/abiyan-ahmed-bb8b81332",
+    "github": "https://github.com/AD700-cam",
+    "portfolio": "https://abxn.dev"
+  }
+}
