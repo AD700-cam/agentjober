@@ -130,11 +130,18 @@ def main():
         print("\nAnalyzing answer and generating coach feedback...")
         feedback = evaluate_answer(profile, role, question, answer)
         
+        # Save interview QA session to persistent vector memory
+        try:
+            from memory.vector_store import save_interview_qa
+            save_interview_qa(role, question, answer, feedback)
+        except Exception as e:
+            print(f"\n[Warning] Database saving failed: {e}")
+        
         print("\nFeedback:")
         print(feedback)
         print("\n" + "=" * 50)
 
-    print("\nInterview coaching session finished. Keep practice, you got this!")
+    print("\nInterview coaching session finished. Keep practicing, you got this!")
 
 if __name__ == "__main__":
     main()

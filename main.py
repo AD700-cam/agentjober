@@ -3,6 +3,8 @@ from agents import gemini_profile_agent
 from agents import resume_agent
 from agents import portfolio_agent
 from agents import interview_agent
+from agents import career_advisor_agent
+from memory.manager import build_index
 
 def main():
     # Force standard output to UTF-8 to prevent encoding crashes on Windows consoles
@@ -12,13 +14,17 @@ def main():
         except AttributeError:
             pass
 
+    # Build or verify vector memory index at startup
+    build_index()
+
     while True:
         print("\n=== AI Career Assistant ===")
         print("1. Profile Assistant")
         print("2. Resume Generator")
         print("3. Portfolio Generator")
         print("4. Interview Coach")
-        print("5. Exit")
+        print("5. Career Advisor")
+        print("6. Exit")
         
         try:
             choice = input("\nChoose:\n> ").strip()
@@ -41,11 +47,15 @@ def main():
                 print("\n" + "=" * 50)
                 interview_agent.main()
                 print("=" * 50)
-            elif choice == "5" or choice.lower() == "exit":
+            elif choice == "5":
+                print("\n" + "=" * 50)
+                career_advisor_agent.main()
+                print("=" * 50)
+            elif choice == "6" or choice.lower() == "exit":
                 print("\nThank you for using AI Career Assistant. Goodbye!")
                 break
             else:
-                print("\n[Error] Invalid choice. Please choose a number from 1 to 5.")
+                print("\n[Error] Invalid choice. Please choose a number from 1 to 6.")
         except (KeyboardInterrupt, EOFError):
             print("\n\nThank you for using AI Career Assistant. Goodbye!")
             break

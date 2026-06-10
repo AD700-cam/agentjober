@@ -1,8 +1,6 @@
-import json
-import os
 import sys
 from tools.gemini_client import model
-from tools.load_profile import load_profile
+from memory.manager import search
 
 def main():
     # Force standard output to UTF-8 to prevent encoding crashes on Windows consoles
@@ -12,13 +10,7 @@ def main():
         except AttributeError:
             pass
 
-    try:
-        profile = load_profile()
-    except Exception as e:
-        print(f"Error loading profile: {e}")
-        return
-
-    print("=== AI Profile Agent ===")
+    print("=== AI Profile Assistant (Semantic Memory Mode) ===")
     print("Type 'exit' to quit")
 
     while True:
@@ -30,14 +22,17 @@ def main():
                 print("Returning to main menu...")
                 break
 
+            print("\nRetrieving relevant profile context from memory...")
+            context = search(question, top_k=3)
+
             prompt = f"""
 You are a personal career assistant.
 
-User Profile:
+Below is the semantically relevant context retrieved from the candidate's profile:
 
-{json.dumps(profile, indent=2)}
+{context}
 
-Answer this question using ONLY the profile information:
+Answer this question using ONLY the retrieved profile context above. If the answer cannot be found in the retrieved context, politely state that you do not have that information.
 
 Question:
 {question}

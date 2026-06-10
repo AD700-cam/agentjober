@@ -126,3 +126,7 @@ venv.bak/
 .env.local
 .env.*.local
 config.local.json
+
+# Local databases and indexes
+data/memory_index.json
+memory/vector_db/
