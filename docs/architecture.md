@@ -10,10 +10,10 @@ The system is structured into five distinct, decoupled layers, ensuring modulari
 
 ```mermaid
 graph TD
-    User([User Client]) --> RoutingLayer[Routing Layer: main.py / app.py]
+    User([User Client]) --> RoutingLayer[Routing Layer: main.py / app.py / Scheduler]
     
     subgraph SystemLayers [AI Agent System Layers]
-        RoutingLayer --> AgentLayer[Agent Layer: Profile, Resume, Portfolio, Coach, Advisor]
+        RoutingLayer --> AgentLayer[Agent Layer: Profile, Resume, Portfolio, Coach, Advisor, Readiness, Tailoring]
         AgentLayer --> MemoryLayer[Memory Layer: Vector Cache & ChromaDB]
         AgentLayer --> LLMLayer[LLM Layer: Gemini Clients & Embeddings]
         AgentLayer --> DataLayer[Data Layer: master_profile.json]
@@ -32,7 +32,7 @@ graph TD
 ### 2. Memory Layer (Semantic & Session Persistence)
 Provides both static search caching and stateful history preservation:
 - **Vector Cache (`data/memory_index.json`):** Created by [`memory/manager.py`](file:///d:/temp/ai-agent-roadmap/memory/manager.py). Chunks the profile and generates/caches embedding vectors using MD5 hashing of the profile file to prevent redundant model calls.
-- **Persistent DB (`memory/vector_db`):** Driven by [`memory/vector_store.py`](file:///d:/temp/ai-agent-roadmap/memory/vector_store.py). Employs **ChromaDB** to persistently store and query candidate mock interview logs (questions, responses, and recruiter critiques) categorized into specific collections (`interview_history` and `career_memory`).
+- **Persistent DB (`memory/vector_db`):** Driven by [`memory/vector_store.py`](file:///d:/temp/ai-agent-roadmap/memory/vector_store.py). Employs **ChromaDB** to persistently store and query candidate mock interview logs (questions, responses, and recruiter critiques) categorized into specific collections (`interview_history`, `career_memory`, and `job_listings`).
 
 ### 3. Agent Layer (Modular Behavior Engines)
 Decoupled agent files implementing distinct logic:
@@ -41,11 +41,14 @@ Decoupled agent files implementing distinct logic:
 - **Portfolio Generator (`agents/portfolio_agent.py`):** Structured layouts focusing on business impact and highlights.
 - **Interview Coach (`agents/interview_agent.py`):** Stateful agent managing mock Q&A, answer scoring, and feedback evaluation.
 - **Career Advisor (`agents/career_advisor_agent.py`):** Coach agent performing meta-analysis on past interview database logs to generate weakness/strength analytics.
+- **Application Readiness Agent (`agents/readiness_agent.py`):** Evaluates candidate profile compatibility against job descriptions to score fit percentage, list strengths, identify gaps, and output custom study roadmaps.
+- **Resume Tailoring Agent (`agents/resume_tailor_agent.py`):** Dynamically alters profile summaries, bullet points, and skill orders to target specific job post demands (preserving truthfulness).
 
-### 4. Routing Layer (CLI & Web Entry Points)
+### 4. Routing Layer (CLI, Web UI, & Schedulers)
 Coordinates launching and passing parameters to specific agents:
 - **Terminal Entry (`main.py`):** Interactive terminal loop with exit handling.
 - **Web UI Entry (`app.py`):** Streamlit web layout, stateful caching (`st.session_state`), and file exporter integration.
+- **Daily Scrape Pipeline Scheduler (`app.py`):** Runs an in-memory background cron runner (`BackgroundScheduler` from `apscheduler`) checking and refreshing HN jobs at 8:00 AM every morning.
 
 ### 5. LLM Layer (AI Integrations & Vector Embeddings)
 - **Client Configuration ([`tools/gemini_client.py`](file:///d:/temp/ai-agent-roadmap/tools/gemini_client.py)):** Instantiates and registers the `gemini-3.5-flash` model.
@@ -89,4 +92,21 @@ How mock interview rounds are managed and performance analyzed:
 [User requests weaknesses]  → Advisor reads all past records from ChromaDB
        ↓
 [Advisor Analysis]          → Gemini performs meta-critique to summarize Weak/Strong areas
+```
+
+### Pipeline C: Application Readiness & Resume Tailoring (NEW)
+How job matches are analyzed and customized:
+
+```
+[Crawled Job Listing]
+       ↓
+[readiness_agent.py]    → Parse profile and job description via Gemini
+       ↓
+[Output Analytics]      → Match score %, strengths list, gaps list, study guidelines
+       ↓
+[User clicks Tailor]    → Trigger resume_tailor_agent.py
+       ↓
+[Resume Tailor Agent]   → Dynamically match achievements and summary statement to job posting
+       ↓
+[Custom Resume Document]→ Render preview and compile Markdown, HTML, and PDF exports
 ```
