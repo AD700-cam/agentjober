@@ -534,20 +534,20 @@ elif page == "Job Matcher":
                             from agents.auto_submitter_agent import AutoSubmitterAgent
                             
                             agent = AutoSubmitterAgent(resume_path="Resume.pdf")
-                            target_url = job_url if job_url else f"file:///{os.path.abspath('scratch/test_form.html').replace('\\', '/')}"
+                            abspath_test_form = os.path.abspath('scratch/test_form.html').replace('\\', '/')
+                            target_url = job_url if job_url else f"file:///{abspath_test_form}"
                             
                             with sync_playwright() as p:
-                                browser = p.chromium.launch(headless=True)
-                                context = browser.new_context(
-                                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                                )
-                                page = context.new_page()
+                                from tools.browser_launcher import launch_browser_with_context
+                                browser, context, page = launch_browser_with_context(p, headless=True)
                                 
+                                job_id = job.get("id", "unknown_job")
                                 metadata = {
                                     "company": job_company,
                                     "title": job_title,
                                     "readiness_score": readiness_score,
-                                    "ats_score": ats_score
+                                    "ats_score": ats_score,
+                                    "job_id": job_id
                                 }
                                 
                                 for entry in agent.fill_job_application(page, target_url, submit=submit_batch, metadata=metadata):
