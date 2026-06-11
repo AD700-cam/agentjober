@@ -183,6 +183,13 @@ def start_scheduler():
 
 scheduler = start_scheduler()
 
+# Send startup notification to verify notification channel setup
+try:
+    from tools.notifier import send_notification
+    send_notification("Dashboard service initialized and listening in the cloud.", "success")
+except Exception as e:
+    print(f"[Notifier Error] Could not send startup notification: {e}")
+
 # App title and sidebar navigation
 st.sidebar.title("🎓 AI Career Assistant")
 st.sidebar.markdown("Navigate through your AI agents:")
