@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Job Application Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #0f172a;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="file"] {
+            font-size: 14px;
+        }
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        #success-msg {
+            display: none;
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Application for Senior Web Developer</h1>
+    
+    <form id="app-form" action="#" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="fullname">Full Name *</label>
+            <input type="text" id="fullname" name="fullname" placeholder="John Doe" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="email-addr">Email Address *</label>
+            <input type="email" id="email-addr" name="email" placeholder="john@example.com" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="phone-number">Phone Number</label>
+            <input type="text" id="phone-number" name="phone" placeholder="123-456-7890">
+        </div>
+        
+        <div class="form-group">
+            <label for="resume-cv">Upload Resume (PDF) *</label>
+            <input type="file" id="resume-cv" name="resume" accept=".pdf" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="linkedin-profile">LinkedIn Profile URL</label>
+            <input type="text" id="linkedin-profile" name="linkedin" placeholder="https://linkedin.com/in/username">
+        </div>
+        
+        <div class="form-group">
+            <label for="github-profile">GitHub URL</label>
+            <input type="text" id="github-profile" name="github" placeholder="https://github.com/username">
+        </div>
+        
+        <div class="form-group">
+            <label for="portfolio-url">Portfolio Website</label>
+            <input type="text" id="portfolio-url" name="portfolio" placeholder="https://myportfolio.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="custom-essay">Why do you want to work at this company? *</label>
+            <textarea id="custom-essay" name="custom_question_why" rows="5" placeholder="Explain your motivation..." required></textarea>
+        </div>
+        
+        <button type="submit" id="submit-btn">Submit Application</button>
+    </form>
+    
+    <div id="success-msg">
+        🎉 Mock Application Submitted Successfully!
+    </div>
+    
+    <script>
+        document.getElementById('app-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            // Verify file is selected
+            const fileInput = document.getElementById('resume-cv');
+            if (fileInput.files.length === 0) {
+                alert('Please upload a resume file.');
+                return;
+            }
+            document.getElementById('app-form').style.display = 'none';
+            document.getElementById('success-msg').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

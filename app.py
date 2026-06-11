@@ -71,7 +71,7 @@ st.sidebar.markdown("Navigate through your AI agents:")
 
 page = st.sidebar.radio(
     "Choose Agent:",
-    ["Profile Assistant", "Resume Generator", "Portfolio Generator", "Interview Coach", "Career Advisor", "Job Matcher"]
+    ["Profile Assistant", "Resume Generator", "Portfolio Generator", "Interview Coach", "Career Advisor", "Job Matcher", "HITL Review Queue", "Application Analytics"]
 )
 
 st.sidebar.divider()
@@ -478,6 +478,92 @@ elif page == "Job Matcher":
             )
             selected_match = selected_opt["job"] if selected_opt else None
 
+            # Batch Submission Console UI Block
+            st.divider()
+            st.subheader("📦 Batch Submission Console")
+            batch_selected = st.multiselect(
+                "Select multiple jobs for Batch Submit:",
+                options=job_options,
+                format_func=lambda opt: opt["label"],
+                key="batch_multiselect"
+            )
+            if batch_selected:
+                submit_batch = st.checkbox("Enable actual submission for batch (uncheck for simulation)", value=False, key="batch_submit_mode")
+                if st.button("Run Batch Application", type="primary", use_container_width=True):
+                    log_area = st.empty()
+                    progress_bar = st.progress(0.0)
+                    log_text = "📦 **Starting Batch Processing...**\n"
+                    log_area.markdown(log_text)
+                    
+                    total = len(batch_selected)
+                    for idx, opt in enumerate(batch_selected):
+                        job = opt["job"]
+                        job_meta = job.get("metadata", {})
+                        job_desc = job.get("document", "")
+                        job_title = job_meta.get("title")
+                        job_company = job_meta.get("company")
+                        
+                        # Find job url
+                        job_url = ""
+                        for j in st.session_state.crawled_jobs:
+                            if j["title"] == job_title and j["company"] == job_company:
+                                job_url = j.get("url", "")
+                                break
+                        
+                        log_text += f"\n\n--- Processing Job {idx+1}/{total}: {job_title} at {job_company} ---"
+                        log_area.markdown(log_text)
+                        
+                        try:
+                            # 1. Tailor Resume
+                            from agents.resume_tailor_agent import tailor_resume
+                            tailored_res = tailor_resume(profile, job_desc)
+                            
+                            # 2. Compatibility Score
+                            from agents.readiness_agent import evaluate_application_readiness
+                            readiness_data = evaluate_application_readiness(profile, job_desc)
+                            readiness_score = readiness_data.get("match_score", 50)
+                            
+                            # 3. ATS Score
+                            from agents.ats_scorer_agent import ATSScorerAgent
+                            scorer = ATSScorerAgent()
+                            ats_data = scorer.evaluate_resume(tailored_res, job_desc)
+                            ats_score = ats_data.get("ats_score", 50)
+                            
+                            # 4. Fill Application
+                            from playwright.sync_api import sync_playwright
+                            from agents.auto_submitter_agent import AutoSubmitterAgent
+                            
+                            agent = AutoSubmitterAgent(resume_path="Resume.pdf")
+                            target_url = job_url if job_url else f"file:///{os.path.abspath('scratch/test_form.html').replace('\\', '/')}"
+                            
+                            with sync_playwright() as p:
+                                browser = p.chromium.launch(headless=True)
+                                context = browser.new_context(
+                                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                                )
+                                page = context.new_page()
+                                
+                                metadata = {
+                                    "company": job_company,
+                                    "title": job_title,
+                                    "readiness_score": readiness_score,
+                                    "ats_score": ats_score
+                                }
+                                
+                                for entry in agent.fill_job_application(page, target_url, submit=submit_batch, metadata=metadata):
+                                    log_text += f"\n- {entry}"
+                                    log_area.markdown(log_text)
+                                    
+                                browser.close()
+                                
+                        except Exception as err:
+                            log_text += f"\n- ❌ Failed: {err}"
+                            log_area.markdown(log_text)
+                            
+                        progress_bar.progress((idx + 1) / total)
+                        
+                    st.success("Batch run completed!")
+
     with col2:
         if not selected_match:
             st.subheader("Job Details")
@@ -664,3 +750,362 @@ elif page == "Job Matcher":
                     
                     st.markdown("**Tailored Resume Preview:**")
                     st.markdown(tailored_content)
+
+                    # ==================================================
+                    # ATS SCORER CARD SECTION (Phase 5)
+                    # ==================================================
+                    st.divider()
+                    st.subheader("📊 ATS Compatibility Card")
+                    
+                    if f"ats_report_{job_id}" not in st.session_state:
+                        with st.spinner("Analyzing ATS scoring and formatting compatibility..."):
+                            from agents.ats_scorer_agent import ATSScorerAgent
+                            scorer = ATSScorerAgent()
+                            st.session_state[f"ats_report_{job_id}"] = scorer.evaluate_resume(tailored_content, desc)
+                            
+                    ats_report = st.session_state[f"ats_report_{job_id}"]
+                    ats_score = ats_report.get("ats_score", 50)
+                    rating = ats_report.get("parsability_rating", "Excellent")
+                    
+                    col_score1, col_score2 = st.columns(2)
+                    col_score1.metric("ATS Score", f"{ats_score}%")
+                    col_score2.metric("Parsability Rating", rating)
+                    
+                    with st.expander("Show Keyword Analysis"):
+                        st.markdown("**Matched Keywords:**")
+                        st.write(", ".join(ats_report.get("matched_keywords", [])))
+                        st.markdown("**Missing Keywords (Gaps):**")
+                        st.write(", ".join(ats_report.get("missing_keywords", [])))
+                        
+                    st.markdown("**ATS Recommendations:**")
+                    for rec in ats_report.get("recommendations", []):
+                        st.markdown(f"- {rec}")
+
+                    # ==================================================
+                    # COVER LETTER SECTION (Phase 5)
+                    # ==================================================
+                    st.divider()
+                    st.subheader("✉️ Tailored Cover Letter Agent")
+                    st.markdown("Generate a cover letter specifically customized for this job listing.")
+                    
+                    if f"cover_letter_{job_id}" not in st.session_state:
+                        st.session_state[f"cover_letter_{job_id}"] = None
+                        
+                    if st.button("Generate Tailored Cover Letter", key=f"cl_btn_{job_id}", type="primary", use_container_width=True):
+                        with st.spinner("Drafting tailored cover letter..."):
+                            from agents.cover_letter_agent import CoverLetterAgent
+                            cl_agent = CoverLetterAgent()
+                            st.session_state[f"cover_letter_{job_id}"] = cl_agent.generate_cover_letter(profile, desc)
+                            
+                    cl_content = st.session_state[f"cover_letter_{job_id}"]
+                    if cl_content:
+                        st.success("Cover Letter generated successfully!")
+                        
+                        col_c1, col_c2, col_c3 = st.columns(3)
+                        col_c1.download_button(
+                            label="Download Letter (.md)",
+                            data=cl_content,
+                            file_name=f"cover_letter_{meta.get('company').lower().replace(' ', '_')}.md",
+                            mime="text/markdown",
+                            use_container_width=True
+                        )
+                        
+                        html_cl = markdown_to_html(cl_content)
+                        col_c2.download_button(
+                            label="Download Letter (.html)",
+                            data=html_cl,
+                            file_name=f"cover_letter_{meta.get('company').lower().replace(' ', '_')}.html",
+                            mime="text/html",
+                            use_container_width=True
+                        )
+                        
+                        try:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                markdown_to_pdf(cl_content, tmp.name)
+                                with open(tmp.name, "rb") as f:
+                                    pdf_cl_bytes = f.read()
+                            col_c3.download_button(
+                                label="Download Letter (.pdf)",
+                                data=pdf_cl_bytes,
+                                file_name=f"cover_letter_{meta.get('company').lower().replace(' ', '_')}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True
+                            )
+                        except Exception as e:
+                            col_c3.error(f"Letter PDF failed: {e}")
+                            
+                        st.markdown("**Cover Letter Preview:**")
+                        st.markdown(cl_content)
+
+                    # ==================================================
+                    # AUTO-APPLY ASSISTANT SECTION
+                    # ==================================================
+                    st.divider()
+                    st.subheader("🤖 Auto-Apply Assistant (Phase 4 & 5)")
+                    st.markdown("Automate the application process by auto-filling form fields, uploading your PDF resume, and answering custom questions via the Gemini API.")
+                    
+                    submit_app = st.checkbox("Enable actual application submission (uncheck for simulation/fill-only mode)", value=False, key=f"submit_app_{job_id}")
+                    
+                    if st.button("Auto-Fill Application for this Job", type="secondary", use_container_width=True, key=f"autofill_btn_{job_id}"):
+                        log_area = st.empty()
+                        log_text = "🤖 **Auto-Apply Automation Log:**\n"
+                        log_area.markdown(log_text)
+                        
+                        try:
+                            from playwright.sync_api import sync_playwright
+                            from agents.auto_submitter_agent import AutoSubmitterAgent
+                            
+                            agent = AutoSubmitterAgent(resume_path="Resume.pdf")
+                            target_url = url if url else f"file:///{os.path.abspath('scratch/test_form.html').replace('\\', '/')}"
+                            
+                            metadata = {
+                                "company": meta.get("company", "Unknown Company"),
+                                "title": meta.get("title", "Unknown Title"),
+                                "readiness_score": score,
+                                "ats_score": ats_score,
+                                "job_id": job_id
+                            }
+                            
+                            with sync_playwright() as p:
+                                from tools.browser_launcher import launch_browser_with_context
+                                browser, context, page = launch_browser_with_context(p, headless=True)
+                                
+                                for log_entry in agent.fill_job_application(page, target_url, submit=submit_app, metadata=metadata):
+                                    log_text += f"\n- {log_entry}"
+                                    log_area.markdown(log_text)
+                                    
+                                browser.close()
+                                
+                            st.success("Auto-apply process completed!")
+                        except Exception as apply_err:
+                            st.error(f"Auto-apply failed: {apply_err}")
+
+# ==================================================
+# PAGE 7: HITL REVIEW QUEUE
+# ==================================================
+elif page == "HITL Review Queue":
+    st.title("⏳ HITL Review Queue")
+    st.markdown("Review and submit automated applications that are held pending manual approval. You can verify and edit custom answers generated by the Gemini API, inspect screenshots of the filled forms, and approve the submission live.")
+    
+    import os
+    import json
+    import re
+    history_path = "data/application_history.json"
+    
+    if not os.path.exists(history_path):
+        st.info("No application history found yet. Go to the 'Job Matcher' page and run applications, or let the daily background scheduler run!")
+    else:
+        try:
+            with open(history_path, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except Exception as e:
+            st.error(f"Failed to read application history: {e}")
+            history = []
+            
+        pending_apps = [item for item in history if item.get("status") == "Pending Review"]
+        
+        if not pending_apps:
+            st.success("🎉 You are all caught up! No applications are currently pending review.")
+        else:
+            st.warning(f"There are {len(pending_apps)} applications pending your manual review and approval.")
+            
+            for idx, app_item in enumerate(pending_apps):
+                company = app_item.get("company", "Unknown Company")
+                title = app_item.get("title", "Unknown Title")
+                url = app_item.get("url", "")
+                readiness_score = app_item.get("readiness_score", 50)
+                ats_score = app_item.get("ats_score", 50)
+                job_id = app_item.get("job_id", "")
+                
+                with st.container():
+                    st.write("")
+                    st.subheader(f"💼 {company} — {title}")
+                    
+                    col_left, col_right = st.columns([1, 1])
+                    
+                    # Resolve safe company slug
+                    company_slug = re.sub(r'[\s/\\?%*:|"<>]', '_', company.lower())
+                    q_json_path = os.path.join("data", "tailored_applications", f"{company_slug}_{job_id}", "custom_questions.json")
+                    
+                    custom_answers = {}
+                    if os.path.exists(q_json_path):
+                        try:
+                            with open(q_json_path, "r", encoding="utf-8") as qf:
+                                custom_answers = json.load(qf)
+                        except Exception:
+                            pass
+                            
+                    with col_left:
+                        st.markdown(f"**Application URL:** [Apply Link]({url})")
+                        st.markdown(f"**Readiness Score:** `{readiness_score}%` | **ATS Compatibility Score:** `{ats_score}%`")
+                        
+                        st.divider()
+                        st.markdown("📝 **Custom Question Inputs & LLM Responses:**")
+                        
+                        updated_answers = {}
+                        if custom_answers:
+                            for question, ans_val in custom_answers.items():
+                                # Unique widget key
+                                key_id = f"hitl_{job_id}_{hash(question)}"
+                                user_ans = st.text_area(f"❓ {question}", value=ans_val, key=key_id, height=120)
+                                updated_answers[question] = user_ans
+                        else:
+                            st.info("No custom essay questions were encountered for this application form.")
+                            
+                        # Review Actions
+                        st.write("")
+                        col_act1, col_act2 = st.columns(2)
+                        
+                        if col_act1.button("✅ Approve & Submit", key=f"app_sub_{job_id}", type="primary", use_container_width=True):
+                            with st.spinner("Re-filling form fields and executing live submission..."):
+                                if updated_answers:
+                                    try:
+                                        with open(q_json_path, "w", encoding="utf-8") as qf:
+                                            json.dump(updated_answers, qf, indent=2)
+                                    except Exception:
+                                        pass
+                                        
+                                from playwright.sync_api import sync_playwright
+                                from agents.auto_submitter_agent import AutoSubmitterAgent
+                                from tools.browser_launcher import launch_browser_with_context
+                                from tools.notifier import send_notification
+                                
+                                resume_pdf_path = os.path.join("data", "tailored_applications", f"{company_slug}_{job_id}", "resume_tailored.pdf")
+                                if not os.path.exists(resume_pdf_path):
+                                    resume_pdf_path = "Resume.pdf"
+                                    
+                                agent = AutoSubmitterAgent(
+                                    profile_path="data/master_profile.json",
+                                    resume_path=resume_pdf_path,
+                                    prefilled_answers=updated_answers
+                                )
+                                
+                                log_area = st.empty()
+                                log_text = "🤖 **Submitting Application Live:**\n"
+                                log_area.markdown(log_text)
+                                
+                                try:
+                                    with sync_playwright() as p:
+                                        browser, context, page = launch_browser_with_context(p, headless=True)
+                                        
+                                        metadata = {
+                                            "company": company,
+                                            "title": title,
+                                            "readiness_score": readiness_score,
+                                            "ats_score": ats_score,
+                                            "job_id": job_id
+                                        }
+                                        
+                                        for log_entry in agent.fill_job_application(page, url, submit=True, metadata=metadata):
+                                            log_text += f"\n- {log_entry}"
+                                            log_area.markdown(log_text)
+                                            
+                                        browser.close()
+                                        
+                                    st.success("Application successfully submitted live!")
+                                    send_notification(f"Submitted application for **{company}** - *{title}* (Readiness: {readiness_score}%, ATS: {ats_score}%)", "success")
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Live submission failed: {e}")
+                                    send_notification(f"Failed to submit application for **{company}** - *{title}*: {e}", "error")
+                                    
+                        if col_act2.button("🗑️ Discard Application", key=f"discard_{job_id}", type="secondary", use_container_width=True):
+                            if os.path.exists(history_path):
+                                try:
+                                    with open(history_path, "r", encoding="utf-8") as f:
+                                        hist = json.load(f)
+                                    for idx_h, item in enumerate(hist):
+                                        if item.get("job_id") == job_id:
+                                            hist[idx_h]["status"] = "Discarded"
+                                            break
+                                    with open(history_path, "w", encoding="utf-8") as f:
+                                        json.dump(hist, f, indent=2)
+                                    st.toast(f"Discarded application for {company}.")
+                                    st.rerun()
+                                except Exception as err:
+                                    st.error(f"Failed to discard application: {err}")
+                                    
+                    with col_right:
+                        st.markdown("📸 **Filled Page Screenshot Preview:**")
+                        screenshot_path = os.path.join("data", "tailored_applications", f"{company_slug}_{job_id}", "screenshot.png")
+                        if os.path.exists(screenshot_path):
+                            st.image(screenshot_path, caption="Page Screenshot (Form State)", use_container_width=True)
+                        else:
+                            st.info("No screenshot captured for this application form state.")
+                
+                st.divider()
+
+# ==================================================
+# PAGE 8: APPLICATION ANALYTICS
+# ==================================================
+elif page == "Application Analytics":
+    st.title("📊 Application History & Submission Analytics")
+    st.markdown("Track and visualize your automated job submissions, matching scores, and application outcomes.")
+    
+    import pandas as pd
+    history_path = "data/application_history.json"
+    
+    if not os.path.exists(history_path):
+        st.info("No application history found yet. Go to the 'Job Matcher' page and run auto-apply or batch submissions!")
+    else:
+        try:
+            with open(history_path, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except Exception as e:
+            st.error(f"Failed to read application history: {e}")
+            history = []
+            
+        if not history:
+            st.info("Your application history is empty. Submit some applications first!")
+        else:
+            df = pd.DataFrame(history)
+            
+            # KPI Metrics Row
+            col1, col2, col3, col4 = st.columns(4)
+            
+            total_apps = len(df)
+            col1.metric("Total Runs", total_apps)
+            
+            submitted_count = len(df[df["status"] == "Submitted"])
+            simulated_count = len(df[df["status"] == "Simulated"])
+            failed_count = len(df[df["status"] == "Failed"])
+            
+            col2.metric("Submitted Applications", submitted_count)
+            col3.metric("Simulation Runs", simulated_count)
+            col4.metric("Failed Runs", failed_count)
+            
+            # Score Metrics Row
+            st.write("")
+            col_s1, col_s2, col_s3 = st.columns(3)
+            avg_readiness = int(df["readiness_score"].mean()) if "readiness_score" in df else 50
+            avg_ats = int(df["ats_score"].mean()) if "ats_score" in df else 50
+            success_rate = int((submitted_count + simulated_count) / total_apps * 100) if total_apps > 0 else 0
+            
+            col_s1.metric("Avg Readiness Score", f"{avg_readiness}%")
+            col_s2.metric("Avg ATS Score", f"{avg_ats}%")
+            col_s3.metric("Process Success Rate", f"{success_rate}%")
+            
+            # Render Charts
+            st.divider()
+            st.subheader("Trends & Visual Analytics")
+            
+            chart_col1, chart_col2 = st.columns(2)
+            
+            with chart_col1:
+                st.markdown("**Submission Status Breakdown:**")
+                status_counts = df["status"].value_counts().reset_index()
+                status_counts.columns = ["Status", "Count"]
+                st.bar_chart(status_counts.set_index("Status"))
+                
+            with chart_col2:
+                st.markdown("**Readiness vs ATS Scores (Chronological):**")
+                score_df = df[["timestamp", "readiness_score", "ats_score"]].copy()
+                score_df = score_df.rename(columns={"readiness_score": "Readiness Score", "ats_score": "ATS Score"})
+                st.line_chart(score_df.set_index("timestamp"))
+                
+            # Log Table
+            st.divider()
+            st.subheader("📋 Application History Log")
+            st.dataframe(df.sort_values(by="timestamp", ascending=False), use_container_width=True)
+
+

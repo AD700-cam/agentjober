@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Senior TypeScript Engineer",
+    "company": "AccessOwl",
+    "location": "Remote / Europe",
+    "posted_date": "2026-06-10",
+    "description": "We're building the future of IT access management. Looking for a Senior TypeScript Engineer experienced in React, Next.js, and Node.js. You'll design scalable APIs, integrate with SaaS platforms via OAuth, and build real-time dashboards. Experience with PostgreSQL, Prisma, and CI/CD pipelines (GitHub Actions) is highly valued. Bonus: familiarity with LLM/AI tooling integration.",
+    "url": "https://www.ycombinator.com/companies/accessowl/jobs"
+  },
+  {
+    "title": "Full-Stack Developer",
+    "company": "GoGoGrandparent",
+    "location": "San Francisco, CA / Remote",
+    "posted_date": "2026-06-10",
+    "description": "Join our mission to make technology accessible for seniors. We need a Full-Stack Developer comfortable with React, TypeScript, and Node.js. You'll build and maintain our consumer-facing web apps, implement WebSocket-based real-time features, and work closely with our data team. Experience with relational databases (PostgreSQL/Prisma) and progressive web apps is a strong plus.",
+    "url": "https://news.ycombinator.com/item?id=example1"
+  },
+  {
+    "title": "Frontend Engineer",
+    "company": "Emerge Career",
+    "location": "Bengaluru, India / Remote",
+    "posted_date": "2026-06-10",
+    "description": "Emerge Career is hiring a Frontend Engineer to build our next-generation career platform. Required: React, Next.js, TypeScript. You'll implement responsive UIs, integrate REST and GraphQL APIs, and optimize for Core Web Vitals. Experience with TailwindCSS, testing (Jest/Playwright), and deployment to Vercel is preferred.",
+    "url": "https://news.ycombinator.com/item?id=example2"
+  },
+  {
+    "title": "Software Engineer (Backend Focus)",
+    "company": "Silo AI",
+    "location": "Helsinki, Finland / Remote",
+    "posted_date": "2026-06-09",
+    "description": "Europe's largest private AI lab is looking for backend engineers. You'll build high-performance APIs in Python and TypeScript, design data pipelines, and integrate LLM inference endpoints. Requirements: strong systems design, experience with Docker/Kubernetes, PostgreSQL, and event-driven architectures. AI/ML familiarity is a bonus.",
+    "url": "https://news.ycombinator.com/item?id=example3"
+  },
+  {
+    "title": "Developer Advocate",
+    "company": "Railway",
+    "location": "Remote",
+    "posted_date": "2026-06-09",
+    "description": "Railway is hiring a Developer Advocate to create tutorials, write technical content, and build demo applications. Ideal candidates have experience shipping web apps with modern frameworks (Next.js, Remix, SvelteKit), are comfortable with TypeScript, and have a portfolio of technical writing or video content. Experience with deployment infrastructure and databases is expected.",
+    "url": "https://news.ycombinator.com/item?id=example4"
+  }
+]

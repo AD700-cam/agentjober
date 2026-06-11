@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock iCIMS Application</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #eef2f5; }
+        .card { background: #fff; border-radius: 4px; max-width: 550px; margin: 40px auto; padding: 25px; border: 1px solid #ccd1d9; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #434a54; }
+        input[type="text"], textarea { width: 100%; padding: 8px; border: 1px solid #aab2bd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #37bc9b; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #32a98c; }
+        .success-msg { display: none; color: green; font-size: 18px; font-weight: bold; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>iCIMS Mock Job Portal</h2>
+        <hr style="margin-bottom: 20px;">
+        
+        <!-- Step 1: Login / Email Entry -->
+        <div id="step-1" class="step active">
+            <h3>Please enter your email to start</h3>
+            <div class="form-group">
+                <label for="icims-email-login">Email Address</label>
+                <input type="text" id="icims-email-login" name="email" placeholder="email@example.com">
+            </div>
+            <button type="button" onclick="goToStep(2)">Continue</button>
+        </div>
+
+        <!-- Step 2: Main Application Form -->
+        <div id="step-2" class="step">
+            <h3>Application Details</h3>
+            
+            <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="first_name">
+            </div>
+
+            <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="last_name">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone">
+            </div>
+
+            <div class="form-group">
+                <label for="resume">Upload Resume</label>
+                <input type="file" id="resume" name="resume">
+            </div>
+
+            <div class="form-group">
+                <label for="linkedin">LinkedIn URL</label>
+                <input type="text" id="linkedin" name="linkedin">
+            </div>
+
+            <div class="form-group">
+                <label for="custom_question">Why do you want to work here?</label>
+                <textarea id="custom_question" name="custom_question" rows="3"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button type="button" onclick="goToStep(1)">Back</button>
+                <button type="button" id="submit-btn" onclick="submitApplication()">Submit Application</button>
+            </div>
+        </div>
+
+        <div id="success" class="success-msg">
+            🎉 iCIMS Application Submitted Successfully!
+        </div>
+    </div>
+
+    <script>
+        function goToStep(stepNum) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-' + stepNum).classList.add('active');
+        }
+        function submitApplication() {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

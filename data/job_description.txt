@@ -1,0 +1,4 @@
+Senior TypeScript Engineer at AccessOwl
+Location: Remote / Europe
+Description:
+We're building the future of IT access management. Looking for a Senior TypeScript Engineer experienced in React, Next.js, and Node.js. You'll design scalable APIs, integrate with SaaS platforms via OAuth, and build real-time dashboards. Experience with PostgreSQL, Prisma, and CI/CD pipelines (GitHub Actions) is highly valued. Bonus: familiarity with LLM/AI tooling integration.

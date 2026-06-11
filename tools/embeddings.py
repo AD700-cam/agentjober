@@ -1,16 +1,21 @@
 import math
-import google.generativeai as genai
-import tools.gemini_client
+from tools.gemini_client import client
 
 def get_embedding(text: str, task_type: str = "retrieval_document") -> list[float]:
     """Generates a vector embedding for the given text using Gemini's embedding service."""
     try:
-        response = genai.embed_content(
+        # Standardize task_type name to uppercase for google-genai compatibility
+        api_task_type = task_type.upper() if task_type else "RETRIEVAL_DOCUMENT"
+        
+        response = client.models.embed_content(
             model="models/gemini-embedding-001",
-            content=text,
-            task_type=task_type
+            contents=text,
+            config={
+                "output_dimensionality": 768,
+                "task_type": api_task_type
+            }
         )
-        return response['embedding']
+        return response.embeddings[0].values
     except Exception as e:
         print(f"[Embedding Error] Failed to generate embedding: {e}")
         # Return a zero vector fallback to avoid complete application crashes

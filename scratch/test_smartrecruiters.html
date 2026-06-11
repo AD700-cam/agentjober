@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock SmartRecruiters Application</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f6f8; }
+        .form-card { background: #fff; border: 1px solid #dcdcdc; border-radius: 4px; max-width: 600px; margin: 40px auto; padding: 30px; }
+        .row { display: flex; gap: 20px; }
+        .col { flex: 1; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #4a4a4a; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0073b1; color: white; border: none; padding: 12px; font-size: 16px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 15px; }
+        button:hover { background: #005582; }
+        .success-msg { display: none; color: green; font-size: 18px; font-weight: bold; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h2>SmartRecruiters Mock Application</h2>
+        <p style="color: #666;">Apply to SmartCorp</p>
+        <hr style="margin-bottom: 20px;">
+        
+        <form id="sr-form" onsubmit="event.preventDefault(); submitForm();">
+            <div class="row">
+                <div class="col form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" placeholder="First">
+                </div>
+                <div class="col form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" placeholder="Last">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="text" id="email" name="email" placeholder="Email">
+            </div>
+            
+            <div class="form-group">
+                <label for="phoneNumber">Mobile Phone</label>
+                <input type="text" id="phoneNumber" name="phoneNumber" placeholder="Phone">
+            </div>
+
+            <div class="form-group">
+                <label for="resume">Attach resume</label>
+                <input type="file" id="resume" name="resume">
+            </div>
+
+            <div class="form-group">
+                <label for="linkedin">LinkedIn Profile</label>
+                <input type="text" id="linkedin" name="linkedin" placeholder="LinkedIn URL">
+            </div>
+
+            <div class="form-group">
+                <label for="website">Website / Portfolio</label>
+                <input type="text" id="website" name="websiteurl" placeholder="Website URL">
+            </div>
+
+            <div class="form-group">
+                <label for="custom_question">Why do you want to join our team?</label>
+                <textarea id="custom_question" name="custom_question" rows="3"></textarea>
+            </div>
+
+            <button type="submit" id="submit-btn">Apply</button>
+        </form>
+
+        <div id="success" class="success-msg">
+            🎉 SmartRecruiters Application Submitted Successfully!
+        </div>
+    </div>
+
+    <script>
+        function submitForm() {
+            document.getElementById('sr-form').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

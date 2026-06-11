@@ -11,7 +11,7 @@ class PDF(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
 def markdown_to_html(markdown_text: str) -> str:
-    """Converts standard Markdown formatting to styled, professional HTML."""
+    """Converts standard Markdown formatting to styled, professional, print-friendly HTML."""
     lines = markdown_text.splitlines()
     html_lines = []
     in_list = False
@@ -22,7 +22,6 @@ def markdown_to_html(markdown_text: str) -> str:
             if in_list:
                 html_lines.append("</ul>")
                 in_list = False
-            html_lines.append("<br/>")
             continue
             
         # Headers
@@ -71,69 +70,85 @@ def markdown_to_html(markdown_text: str) -> str:
     # Render inline links ([text](url))
     html_content = re.sub(r'\[(.*?)\]\((.*?)\)', r'<a href="\2" target="_blank">\1</a>', html_content)
     
-    # Wrap in a gorgeous CSS document template
+    # Wrap in a gorgeous print-ready CSS template (optimized for single-page or two-page resumes)
     template = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AI Career Assistant Export</title>
+    <title>ATS Optimized Resume</title>
     <style>
+        @page {{
+            size: A4;
+            margin: 0;
+        }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 20px;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            line-height: 1.4;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
             background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
         }}
         h1 {{
             color: #0f172a;
             border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 12px;
-            font-size: 28px;
+            padding-bottom: 6px;
+            font-size: 24px;
             font-weight: 700;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            text-align: center;
         }}
         h2 {{
-            color: #1e293b;
-            font-size: 20px;
-            font-weight: 600;
-            margin-top: 30px;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 6px;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 18px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #94a3b8;
+            padding-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
         }}
         h3 {{
-            color: #475569;
-            font-size: 16px;
+            color: #334155;
+            font-size: 12.5px;
             font-weight: 600;
-            margin-top: 20px;
+            margin-top: 8px;
+            margin-bottom: 2px;
         }}
         p, li {{
-            font-size: 14.5px;
+            font-size: 11px;
             color: #334155;
+            margin-top: 0;
+            margin-bottom: 4px;
         }}
         ul {{
-            padding-left: 20px;
+            padding-left: 18px;
+            margin-top: 0;
+            margin-bottom: 6px;
         }}
         li {{
-            margin-bottom: 8px;
+            margin-bottom: 2px;
         }}
         a {{
             color: #2563eb;
             text-decoration: none;
         }}
-        a:hover {{
-            text-decoration: underline;
-        }}
         hr {{
             border: 0;
             height: 1px;
-            background: #e2e8f0;
-            margin: 30px 0;
+            background: #cbd5e1;
+            margin: 15px 0;
         }}
         strong {{
             color: #0f172a;
             font-weight: 600;
+        }}
+        /* Page break helper */
+        .page-break {{
+            page-break-before: always;
         }}
     </style>
 </head>
@@ -145,67 +160,41 @@ def markdown_to_html(markdown_text: str) -> str:
     return template
 
 def markdown_to_pdf(markdown_text: str, output_path: str):
-    """Converts standard Markdown formatting to a cleanly formatted, print-ready PDF using fpdf2."""
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_margins(20, 20, 20)
-    pdf.set_auto_page_break(auto=True, margin=15)
+    """Converts standard Markdown formatting to a cleanly styled, print-ready PDF using Playwright page.pdf."""
+    html_content = markdown_to_html(markdown_text)
     
-    lines = markdown_text.splitlines()
-    for line in lines:
-        line = line.strip()
-        if not line:
-            pdf.ln(3)
-            continue
+    import tempfile
+    import os
+    from playwright.sync_api import sync_playwright
+    
+    # Write to a temporary HTML file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as tmp:
+        tmp.write(html_content)
+        tmp_path = tmp.name
+        
+    try:
+        with sync_playwright() as p:
+            # Use headless browser for quick rendering
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
             
-        # Title Header
-        if line.startswith("# "):
-            pdf.set_font("helvetica", "B", 18)
-            pdf.set_text_color(15, 23, 42) # Slate-900 (#0f172a)
-            pdf.multi_cell(0, 9, line[2:])
-            pdf.ln(1)
-        # H2 Header
-        elif line.startswith("## "):
-            pdf.set_font("helvetica", "B", 13)
-            pdf.set_text_color(30, 41, 59) # Slate-800 (#1e293b)
-            pdf.ln(3)
-            pdf.multi_cell(0, 7, line[3:])
-            pdf.ln(1)
-        # H3 Header
-        elif line.startswith("### "):
-            pdf.set_font("helvetica", "B", 11)
-            pdf.set_text_color(71, 85, 105) # Slate-600 (#475569)
-            pdf.multi_cell(0, 6, line[4:])
-            pdf.ln(1)
-        # Horizontal Rule
-        elif line == "---":
-            pdf.set_draw_color(226, 232, 240) # Slate-200 (#e2e8f0)
-            x = pdf.get_x()
-            y = pdf.get_y()
-            pdf.line(x, y + 2, x + 170, y + 2)
-            pdf.ln(5)
-        # Bullet Points
-        elif line.startswith("* ") or line.startswith("- "):
-            pdf.set_font("helvetica", "", 10)
-            pdf.set_text_color(51, 65, 85) # Slate-700 (#334155)
+            # Navigate to temporary HTML page
+            file_url = "file:///" + os.path.abspath(tmp_path).replace("\\", "/")
+            page.goto(file_url)
+            page.wait_for_load_state("networkidle")
             
-            # Clean bold text formatting and links for PDF output
-            content = line[2:]
-            content = content.replace("**", "")
-            content = re.sub(r'\[(.*?)\]\((.*?)\)', r'\1', content)
-            
-            bullet_char = chr(149) # Standard bullet symbol
-            pdf.set_x(25)
-            pdf.multi_cell(0, 5, f"{bullet_char}  {content}")
-        # Standard Paragraph
-        else:
-            pdf.set_font("helvetica", "", 10)
-            pdf.set_text_color(51, 65, 85)
-            
-            content = line.replace("**", "")
-            content = re.sub(r'\[(.*?)\]\((.*?)\)', r'\1', content)
-            
-            pdf.set_x(20)
-            pdf.multi_cell(0, 5, content)
-            
-    pdf.output(output_path)
+            # Print page as PDF with 0.6 inch margins matching target dimensions
+            page.pdf(
+                path=output_path,
+                format="A4",
+                print_background=True,
+                margin={"top": "0.6in", "bottom": "0.6in", "left": "0.6in", "right": "0.6in"}
+            )
+            browser.close()
+    finally:
+        # Delete the temporary file
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass

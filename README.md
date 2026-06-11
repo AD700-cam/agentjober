@@ -56,10 +56,10 @@ For a deeper dive into data flows and schemas, see the complete [Architecture Sp
 ai-agent-roadmap/
 ├── agents/             # Modular agent behavior classes (coaching, tailoring, readiness)
 ├── data/               # Ground truth profile JSON and cache index
-├── docs/               # System architecture design and generated PDF/HTML reports
+├── demo/               # Pre-generated sample outputs (works without API keys)
+├── docs/               # Architecture specification, case study, generated reports
 ├── memory/             # Vector cache builders and ChromaDB database files
 ├── scrapers/           # Playwright job board crawler engine and JSON stores
-├── scratch/            # Automated verification test suites and inspection files
 ├── tools/              # Shared Gemini configurations, embedders, and exporters
 ├── app.py              # Streamlit Web UI Entry Point
 ├── main.py             # CLI Terminal Entry Point
@@ -117,34 +117,37 @@ ai-agent-roadmap/
 
 ---
 
-## 📊 Example Outputs
+## 📊 Verified Results
 
-### 1. Application Readiness Assessment (Job Matcher)
-```json
-{
-  "match_score": 82,
-  "strengths": ["React", "TypeScript", "Next.js"],
-  "gaps": ["Testing (Jest)", "CI/CD (GitHub Actions)", "AWS Fundamentals"],
-  "recommendations": [
-    "1. Learn Jest: write unit tests for components",
-    "2. Set up GitHub Actions: automate your builds"
-  ]
-}
-```
+| Metric | Value |
+|--------|-------|
+| Total AI agents implemented | 7 (Profile, Resume, Portfolio, Coach, Advisor, Readiness, Tailor) |
+| Resume tailoring pipeline | 4,017-character customized resume generated from profile + job description |
+| ChromaDB semantic retrieval | Successfully indexed and queried scraped jobs by profile skills vector |
+| Readiness engine | Identified 4 strengths, 4 gaps, and 4 actionable study plan items |
+| Job scraping throughput | 30 listings parsed per Playwright crawl cycle |
+| Automated pipeline | Daily 8:00 AM background cron via APScheduler |
+| Export formats | Markdown, styled HTML, and print-ready PDF |
+| Persistent interview memory | Longitudinal performance analysis across mock interview sessions |
 
-### 2. Resume Tailoring Agent
-Outputs an ATS-optimized Markdown document:
-```markdown
-# Abiyan Ahmed
-[Email](mailto:abiyanahmed777@gmail.com) | [GitHub](https://github.com/AD700-cam)
+---
 
-## Core Skills (Prioritized)
-- Frontend: TypeScript, React, Next.js, WebSockets, PWAs
-- Databases & Tools: Prisma, Git, GitHub
+## 📂 Demo Dataset (API-Free Outputs)
 
-## Professional Experience
-- Designed a mobile-first PWA e-commerce site, optimizing Service Workers...
-```
+Pre-generated sample outputs are available in [`demo/`](demo/) so you can review the system's capabilities without an API key:
+
+| File | Description |
+|------|-------------|
+| [`sample_jobs.json`](demo/sample_jobs.json) | 5 scraped tech job listings |
+| [`sample_resume.md`](demo/sample_resume.md) | ATS-optimized master resume |
+| [`sample_readiness_report.md`](demo/sample_readiness_report.md) | Readiness score with strengths, gaps, and study plan |
+| [`sample_tailored_resume.md`](demo/sample_tailored_resume.md) | Resume customized for a Senior TypeScript Engineer role |
+
+---
+
+## 📖 Case Study
+
+For a detailed breakdown of the engineering decisions, challenges, and results behind this project, see the [Portfolio Case Study](docs/case_study.md).
 
 ---
 

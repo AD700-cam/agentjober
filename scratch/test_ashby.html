@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock Ashby Application</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #fafafa; }
+        .container { background: #fff; border: 1px solid #e1e1e1; border-radius: 6px; max-width: 600px; margin: 40px auto; padding: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; color: #333; }
+        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input[type="file"] { padding: 10px 0; }
+        button { background: #111; color: white; border: none; padding: 12px 24px; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; }
+        button:hover { background: #333; }
+        .success-msg { display: none; color: green; font-size: 18px; font-weight: bold; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Apply for Senior Backend Engineer @ AshbyMock</h2>
+        <hr style="margin-bottom: 25px;">
+        
+        <form id="ashby-form" onsubmit="event.preventDefault(); submitForm();">
+            <div class="form-group">
+                <label for="ashby-name">Full Name</label>
+                <input type="text" id="ashby-name" name="name" placeholder="Full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="ashby-email">Email address</label>
+                <input type="text" id="ashby-email" name="email" placeholder="Email">
+            </div>
+            
+            <div class="form-group">
+                <label for="ashby-phone">Phone number</label>
+                <input type="text" id="ashby-phone" name="phone" placeholder="Phone">
+            </div>
+
+            <div class="form-group">
+                <label for="ashby-resume">Resume/CV</label>
+                <input type="file" id="ashby-resume" name="resume">
+            </div>
+
+            <div class="form-group">
+                <label for="ashby-linkedin">LinkedIn URL</label>
+                <input type="text" id="ashby-linkedin" name="linkedin" placeholder="https://linkedin.com/in/username">
+            </div>
+
+            <div class="form-group">
+                <label for="ashby-portfolio">Portfolio/Website Link</label>
+                <input type="text" id="ashby-portfolio" name="portfolio" placeholder="https://mywebsite.com">
+            </div>
+
+            <div class="form-group">
+                <label for="ashby-custom">Please describe a complex technical challenge you solved recently.</label>
+                <textarea id="ashby-custom" name="custom" rows="4" placeholder="Your answer..."></textarea>
+            </div>
+
+            <button type="submit" id="submit-btn">Submit Application</button>
+        </form>
+
+        <div id="success" class="success-msg">
+            🎉 Ashby Application Submitted Successfully!
+        </div>
+    </div>
+
+    <script>
+        function submitForm() {
+            document.getElementById('ashby-form').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

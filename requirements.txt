@@ -1,0 +1,10 @@
+google-genai
+google-generativeai
+python-dotenv
+chromadb
+streamlit
+fpdf2
+playwright
+playwright-stealth
+jinja2
+apscheduler

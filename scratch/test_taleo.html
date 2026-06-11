@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock Taleo Application</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .taleo-box { background: #fff; border: 1px solid #999; max-width: 600px; margin: 40px auto; padding: 25px; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-row { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #444; }
+        input[type="text"], textarea { width: 100%; padding: 6px; border: 1px solid #777; box-sizing: border-box; }
+        button { background: #e67e22; color: white; border: none; padding: 8px 16px; font-size: 14px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #d35400; }
+        .success-msg { display: none; color: green; font-size: 18px; font-weight: bold; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="taleo-box">
+        <h2>Oracle Taleo Enterprise Mock Careers</h2>
+        <hr style="margin-bottom: 20px;">
+        
+        <!-- Step 1: Profile & Contact -->
+        <div id="step-1" class="step active">
+            <h3>Personal Information</h3>
+            <div class="form-row">
+                <label for="email">Email Address</label>
+                <input type="text" id="email" name="email">
+            </div>
+            <div class="form-row">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="first_name">
+            </div>
+            <div class="form-row">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="last_name">
+            </div>
+            <div class="form-row">
+                <label for="phone">Primary Phone</label>
+                <input type="text" id="phone" name="phone">
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="button" onclick="goToStep(2)">Save and Continue</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Resume & custom questions -->
+        <div id="step-2" class="step">
+            <h3>Attachments & Details</h3>
+            <div class="form-row">
+                <label for="resume">Attach Resume (PDF)</label>
+                <input type="file" id="resume" name="resume">
+            </div>
+            <div class="form-row">
+                <label for="custom_question">Describe your background in a few sentences.</label>
+                <textarea id="custom_question" name="custom" rows="4"></textarea>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button type="button" onclick="goToStep(1)">Back</button>
+                <button type="button" id="submit-btn" onclick="submitApplication()">Submit</button>
+            </div>
+        </div>
+
+        <div id="success" class="success-msg">
+            🎉 Taleo Application Submitted Successfully!
+        </div>
+    </div>
+
+    <script>
+        function goToStep(stepNum) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-' + stepNum).classList.add('active');
+        }
+        function submitApplication() {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

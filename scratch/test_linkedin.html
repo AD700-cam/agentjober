@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mock LinkedIn Easy Apply</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f3f2ef; }
+        .modal { background: #fff; border-radius: 8px; max-width: 500px; margin: 40px auto; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="text"], textarea { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .buttons { margin-top: 20px; display: flex; justify-content: space-between; }
+        button { background: #0a66c2; color: white; border: none; padding: 10px 20px; border-radius: 24px; font-weight: bold; cursor: pointer; }
+        button:hover { background: #004182; }
+        .success-msg { display: none; color: green; font-size: 18px; font-weight: bold; margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="modal">
+        <h2>Easy Apply to TechCorp</h2>
+        <hr>
+        
+        <!-- Step 1: Contact Info -->
+        <div id="step-1" class="step active">
+            <h3>Step 1: Contact Info</h3>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="text" id="email" name="email" autocomplete="email" placeholder="john@example.com">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" placeholder="1234567890">
+            </div>
+            <div class="buttons">
+                <div></div>
+                <button type="button" onclick="goToStep(2)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Resume Upload -->
+        <div id="step-2" class="step">
+            <h3>Step 2: Resume</h3>
+            <div class="form-group">
+                <label for="resume">Upload Resume (PDF)</label>
+                <input type="file" id="resume" name="resume">
+            </div>
+            <div class="buttons">
+                <button type="button" onclick="goToStep(1)">Back</button>
+                <button type="button" onclick="goToStep(3)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Custom Questions -->
+        <div id="step-3" class="step">
+            <h3>Step 3: Additional Questions</h3>
+            <div class="form-group">
+                <label for="custom_question">Why are you interested in this role?</label>
+                <textarea id="custom_question" name="custom_question" rows="4"></textarea>
+            </div>
+            <div class="buttons">
+                <button type="button" onclick="goToStep(2)">Back</button>
+                <button type="button" onclick="goToStep(4)">Review</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Review and Submit -->
+        <div id="step-4" class="step">
+            <h3>Step 4: Review Application</h3>
+            <p>Please review your details and submit.</p>
+            <div class="buttons">
+                <button type="button" onclick="goToStep(3)">Back</button>
+                <button type="button" id="submit-btn" onclick="submitApplication()">Submit application</button>
+            </div>
+        </div>
+
+        <div id="success" class="success-msg">
+            🎉 LinkedIn Easy Apply Submitted Successfully!
+        </div>
+    </div>
+
+    <script>
+        function goToStep(stepNum) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-' + stepNum).classList.add('active');
+        }
+        function submitApplication() {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('success').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
