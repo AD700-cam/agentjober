@@ -161,13 +161,21 @@ build_index()
 def start_scheduler():
     try:
         from apscheduler.schedulers.background import BackgroundScheduler
-        from scrapers.job_scraper import scrape_jobs
         
+        def run_pipeline_job():
+            import subprocess
+            import sys
+            import os
+            python_path = sys.executable
+            script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_pipeline.py")
+            print("[Scheduler] Triggering scheduled daily pipeline run...")
+            subprocess.Popen([python_path, script_path])
+            
         scheduler = BackgroundScheduler()
-        # Schedule the Playwright scraper to run daily at 8:00 AM
-        scheduler.add_job(scrape_jobs, "cron", hour=8, minute=0, args=[15])
+        # Schedule the full pipeline to run daily at 9:00 AM
+        scheduler.add_job(run_pipeline_job, "cron", hour=9, minute=0, id="daily_pipeline")
         scheduler.start()
-        print("[Scheduler] Started background daily job crawler at 8:00 AM.")
+        print("[Scheduler] Started background daily pipeline scheduler at 9:00 AM.")
         return scheduler
     except Exception as e:
         print(f"[Scheduler] Failed to start background scheduler: {e}")
