@@ -56,9 +56,18 @@ def send_notification(message: str, notification_type: str = "info"):
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         try:
             url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-            # Replace markdown headers for basic Telegram HTML support
-            cleaned_message = formatted_msg.replace("**", "<b>").replace("**", "</b>")
-            cleaned_message = cleaned_message.replace("### ", "\n<b>").replace("\n", "</b>\n")
+            
+            # Escape HTML characters in the raw message to prevent parsing errors
+            import html
+            import re
+            escaped_msg = html.escape(message)
+            
+            # Format markdown tags to HTML tags correctly using regular expressions
+            escaped_msg = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', escaped_msg)
+            escaped_msg = re.sub(r'\*(.*?)\*', r'<i>\1</i>', escaped_msg)
+            escaped_msg = re.sub(r'`(.*?)`', r'<code>\1</code>', escaped_msg)
+            
+            cleaned_message = f"{emoji} <b>[AI Career Assistant]</b>\n{escaped_msg}"
             
             payload = {
                 "chat_id": TELEGRAM_CHAT_ID,
