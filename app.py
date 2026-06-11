@@ -856,7 +856,8 @@ elif page == "Job Matcher":
                             from agents.auto_submitter_agent import AutoSubmitterAgent
                             
                             agent = AutoSubmitterAgent(resume_path="Resume.pdf")
-                            target_url = url if url else f"file:///{os.path.abspath('scratch/test_form.html').replace('\\', '/')}"
+                            abspath_test_form = os.path.abspath('scratch/test_form.html').replace('\\', '/')
+                            target_url = url if url else f"file:///{abspath_test_form}"
                             
                             metadata = {
                                 "company": meta.get("company", "Unknown Company"),
