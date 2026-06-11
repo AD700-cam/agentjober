@@ -36,9 +36,119 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Custom CSS for Premium Look & Feel (Fast & Good Looking)
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+    
+    /* Global Styles */
+    .stApp {
+        font-family: 'Inter', sans-serif;
+    }
+    h1 {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800 !important;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        padding-bottom: 12px;
+    }
+    h2, h3, h4, h5, h6, [data-testid="stHeader"] {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700 !important;
+    }
+    
+    /* Modern Dashboard Cards */
+    .modern-card {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+        backdrop-filter: blur(8px);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .modern-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.18);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+    
+    /* Sidebar styling overrides */
+    [data-testid="stSidebar"] {
+        background-color: #0b0f19 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Metric Value styling */
+    [data-testid="stMetricValue"] {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800 !important;
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 34px !important;
+    }
+    
+    /* Tab Styling */
+    button[data-baseweb="tab"] {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 600 !important;
+    }
+    
+    /* Premium button styles */
+    div.stButton > button:first-child {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 10px 20px !important;
+        font-weight: 600 !important;
+        font-family: 'Outfit', sans-serif !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+        transition: all 0.2s ease !important;
+        width: 100%;
+    }
+    div.stButton > button:first-child:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45) !important;
+    }
+    
+    /* Secondary Action Button overrides */
+    div.stButton > button[kind="secondary"] {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
+        box-shadow: none !important;
+    }
+    div.stButton > button[kind="secondary"]:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+    
+    /* Textarea & inputs visual enhancements */
+    textarea, input[type="text"] {
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background-color: rgba(0, 0, 0, 0.2) !important;
+        transition: border-color 0.2s ease !important;
+    }
+    textarea:focus, input[type="text"]:focus {
+        border-color: #3b82f6 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Cached profile loader for speed optimization
+@st.cache_data
+def get_cached_profile():
+    return load_profile()
+
 # Load profile data
 try:
-    profile = load_profile()
+    profile = get_cached_profile()
 except Exception as e:
     st.error(f"Failed to load master profile: {e}")
     st.stop()
