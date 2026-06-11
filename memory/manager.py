@@ -8,6 +8,26 @@ from tools.embeddings import get_embedding, cosine_similarity
 INDEX_PATH = "data/memory_index.json"
 PROFILE_PATH = "data/master_profile.json"
 
+# High-speed index cache variables
+_INDEX_CACHE = None
+_INDEX_MTIME = None
+
+def get_cached_index_data(path=INDEX_PATH) -> dict:
+    """Loads and caches index JSON data, automatically re-reading only if file changes on disk."""
+    global _INDEX_CACHE, _INDEX_MTIME
+    if not os.path.exists(path):
+        return {}
+    try:
+        current_mtime = os.path.getmtime(path)
+        if _INDEX_CACHE is not None and _INDEX_MTIME == current_mtime:
+            return _INDEX_CACHE
+        with open(path, "r", encoding="utf-8") as f:
+            _INDEX_CACHE = json.load(f)
+            _INDEX_MTIME = current_mtime
+            return _INDEX_CACHE
+    except Exception:
+        return {}
+
 def get_profile_hash(profile: dict) -> str:
     """Generates an MD5 hash of the profile dictionary to track changes."""
     profile_str = json.dumps(profile, sort_keys=True)
@@ -157,15 +177,9 @@ def search(query: str, top_k: int = 3) -> str:
     # Ensure index exists and is built
     build_index()
     
-    if not os.path.exists(INDEX_PATH):
-        print("[Memory Manager] Index file not found.")
-        return ""
-        
-    try:
-        with open(INDEX_PATH, "r", encoding="utf-8") as f:
-            index_data = json.load(f)
-    except Exception as e:
-        print(f"[Memory Manager] Failed to load index: {e}")
+    index_data = get_cached_index_data()
+    if not index_data:
+        print("[Memory Manager] Failed to load index data.")
         return ""
         
     # Get query embedding

@@ -133,10 +133,77 @@ st.markdown("""
         border-radius: 8px !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         background-color: rgba(0, 0, 0, 0.2) !important;
-        transition: border-color 0.2s ease !important;
+        transition: all 0.2s ease !important;
     }
     textarea:focus, input[type="text"]:focus {
         border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* Slide-up Fade Animations (Premium Facelift) */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .element-container, .stMarkdown, .modern-card, [data-testid="stMetricValue"] {
+        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Sidebar list item hover highlights */
+    [data-testid="stSidebar"] div[role="radiogroup"] > label {
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease-in-out !important;
+        margin-bottom: 5px !important;
+        border: 1px solid transparent !important;
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        transform: translateX(3px) !important;
+    }
+
+    /* Glassmorphic/HSL Table Styling */
+    table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin: 15px 0 !important;
+    }
+    th {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+        color: #60a5fa !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid rgba(59, 130, 246, 0.2) !important;
+        padding: 12px !important;
+        text-align: left !important;
+    }
+    td {
+        padding: 12px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background-color: rgba(255, 255, 255, 0.01) !important;
+        color: #e2e8f0 !important;
+    }
+    tr:hover td {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    /* Premium Alert Box Customization */
+    [data-testid="stAlert"] {
+        border-radius: 8px !important;
+        background-color: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important;
+        backdrop-filter: blur(8px) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -657,8 +724,24 @@ elif page == "Job Matcher":
                             # 4. Fill Application
                             from playwright.sync_api import sync_playwright
                             from agents.auto_submitter_agent import AutoSubmitterAgent
+                            import re
                             
-                            agent = AutoSubmitterAgent(resume_path="Resume.pdf")
+                            # Compile tailored resume PDF dynamically for this job in the batch
+                            job_id = job.get("id", "unknown_job")
+                            company_slug = re.sub(r'[\s/\\?%*:|"<>]', '_', job_company.lower())
+                            job_out_dir = os.path.join("data", "tailored_applications", f"{company_slug}_{job_id}")
+                            os.makedirs(job_out_dir, exist_ok=True)
+                            
+                            # Save tailored resume markdown
+                            resume_md_path = os.path.join(job_out_dir, "resume_tailored.md")
+                            with open(resume_md_path, "w", encoding="utf-8") as f:
+                                f.write(tailored_res)
+                            
+                            # Compile PDF
+                            resume_pdf_path = os.path.join(job_out_dir, "resume_tailored.pdf")
+                            markdown_to_pdf(tailored_res, resume_pdf_path)
+                            
+                            agent = AutoSubmitterAgent(resume_path=resume_pdf_path)
                             abspath_test_form = os.path.abspath('scratch/test_form.html').replace('\\', '/')
                             target_url = job_url if job_url else f"file:///{abspath_test_form}"
                             
@@ -839,17 +922,55 @@ elif page == "Job Matcher":
                     tailored_content = st.session_state.tailored_resumes[job_id]
                     st.success("Resume tailored successfully!")
                     
+                    # Ensure output directory exists
+                    company_slug = re.sub(r'[\s/\\?%*:|"<>]', '_', meta.get('company').lower())
+                    out_dir = os.path.join("data", "tailored_applications", f"{company_slug}_{job_id}")
+                    os.makedirs(out_dir, exist_ok=True)
+                    
+                    # Bind editor key in session state
+                    editor_key = f"tailored_resume_editor_{job_id}"
+                    if editor_key not in st.session_state:
+                        st.session_state[editor_key] = tailored_content
+                        
+                    # Save markdown file automatically to disk
+                    resume_md_path = os.path.join(out_dir, "resume_tailored.md")
+                    
+                    # Two columns layout for live editor and preview
+                    col_ed, col_prev = st.columns(2)
+                    
+                    with col_ed:
+                        st.markdown("### ✏️ Live Markdown Editor")
+                        edited_content = st.text_area(
+                            "Edit your tailored resume content below. Changes are saved automatically.",
+                            value=st.session_state[editor_key],
+                            key=editor_key,
+                            height=600
+                        )
+                        # Re-save to out_dir when changed
+                        with open(resume_md_path, "w", encoding="utf-8") as f:
+                            f.write(edited_content)
+                            
+                    with col_prev:
+                        st.markdown("### 👁️ Live Preview")
+                        st.markdown(
+                            f'<div class="modern-card" style="height:628px; overflow-y:auto; border: 1px solid rgba(255,255,255,0.1); padding:20px; border-radius:8px; background:rgba(0,0,0,0.15); font-family:\'Inter\', sans-serif;">'
+                            f'{markdown_to_html(edited_content)}'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+                    
+                    st.write("")
                     col_t1, col_t2, col_t3 = st.columns(3)
                     
                     col_t1.download_button(
                         label="Download Tailored (.md)",
-                        data=tailored_content,
+                        data=edited_content,
                         file_name=f"resume_tailored_{meta.get('company').lower().replace(' ', '_')}.md",
                         mime="text/markdown",
                         use_container_width=True
                     )
                     
-                    html_tailored = markdown_to_html(tailored_content)
+                    html_tailored = markdown_to_html(edited_content)
                     col_t2.download_button(
                         label="Download Tailored (.html)",
                         data=html_tailored,
@@ -860,7 +981,7 @@ elif page == "Job Matcher":
                     
                     try:
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                            markdown_to_pdf(tailored_content, tmp.name)
+                            markdown_to_pdf(edited_content, tmp.name)
                             with open(tmp.name, "rb") as f:
                                 pdf_tailored_bytes = f.read()
                         col_t3.download_button(
@@ -872,9 +993,6 @@ elif page == "Job Matcher":
                         )
                     except Exception as e:
                         col_t3.error(f"Tailored PDF failed: {e}")
-                    
-                    st.markdown("**Tailored Resume Preview:**")
-                    st.markdown(tailored_content)
 
                     # ==================================================
                     # ATS SCORER CARD SECTION (Phase 5)
@@ -980,7 +1098,11 @@ elif page == "Job Matcher":
                             from playwright.sync_api import sync_playwright
                             from agents.auto_submitter_agent import AutoSubmitterAgent
                             
-                            agent = AutoSubmitterAgent(resume_path="Resume.pdf")
+                            # Compile the edited resume PDF dynamically for submission
+                            resume_pdf_path = os.path.join(out_dir, "resume_tailored.pdf")
+                            markdown_to_pdf(edited_content, resume_pdf_path)
+                            
+                            agent = AutoSubmitterAgent(resume_path=resume_pdf_path)
                             abspath_test_form = os.path.abspath('scratch/test_form.html').replace('\\', '/')
                             target_url = url if url else f"file:///{abspath_test_form}"
                             
