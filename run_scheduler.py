@@ -24,9 +24,9 @@ def run_job():
     python_exe = sys.executable
     script_path = os.path.join(project_root, "run_pipeline.py")
     
-    # Propagate submission flag if scheduler was started with it
+    # Propagate submission flag if scheduler was started with it or via env variable
     args = [python_exe, script_path]
-    if "--submit" in sys.argv:
+    if "--submit" in sys.argv or os.getenv("AUTO_SUBMIT", "false").lower() == "true":
         args.append("--submit")
         
     try:
@@ -58,8 +58,8 @@ def main():
     print(f"Mode:         Submission={args.submit}")
     print("=======================================================\n")
     
-    if args.now:
-        print("🚀 Executing initial startup run (--now requested)...")
+    if args.now or os.getenv("RUN_ON_STARTUP", "false").lower() == "true":
+        print("🚀 Executing initial startup run (requested)...")
         run_job()
         
     scheduler = BlockingScheduler()

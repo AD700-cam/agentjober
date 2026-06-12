@@ -112,6 +112,11 @@ def main():
     skipped_count = 0
     
     for idx, m in enumerate(matches, 1):
+        # Introduce rate-limiting delay between jobs to prevent API quota issues (transient 429)
+        if idx > 1:
+            print("\n⏳ Sleeping 10 seconds between job listings to respect API rate limits...")
+            time.sleep(10)
+            
         meta = m.get("metadata", {})
         title = meta.get("title", "Unknown Title")
         company = meta.get("company", "Unknown Company")

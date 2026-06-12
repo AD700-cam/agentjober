@@ -175,7 +175,10 @@ def markdown_to_pdf(markdown_text: str, output_path: str):
     try:
         with sync_playwright() as p:
             # Use headless browser for quick rendering
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-dev-shm-usage"]
+            )
             page = browser.new_page()
             
             # Navigate to temporary HTML page

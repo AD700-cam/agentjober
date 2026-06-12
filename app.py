@@ -236,11 +236,23 @@ def start_scheduler():
             python_path = sys.executable
             script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "run_pipeline.py")
             print("[Scheduler] Triggering scheduled daily pipeline run...")
-            subprocess.Popen([python_path, script_path])
+            
+            # Pass submission flag if AUTO_SUBMIT env variable is set to true
+            args = [python_path, script_path]
+            if os.getenv("AUTO_SUBMIT", "false").lower() == "true":
+                args.append("--submit")
+                
+            subprocess.Popen(args)
             
         scheduler = BackgroundScheduler()
         # Schedule the full pipeline to run daily at 9:00 AM
         scheduler.add_job(run_pipeline_job, "cron", hour=9, minute=0, id="daily_pipeline")
+        
+        # Trigger pipeline execution immediately on startup if requested
+        if os.getenv("RUN_ON_STARTUP", "false").lower() == "true":
+            print("[Scheduler] RUN_ON_STARTUP is enabled. Triggering immediate scheduled job run...")
+            run_pipeline_job()
+            
         scheduler.start()
         print("[Scheduler] Started background daily pipeline scheduler at 9:00 AM.")
         return scheduler
