@@ -110,6 +110,7 @@ def main():
     # 6. Process matched listings
     applied_count = 0
     skipped_count = 0
+    run_report = []
     
     for idx, m in enumerate(matches, 1):
         # Introduce rate-limiting delay between jobs to prevent API quota issues (transient 429)
@@ -134,6 +135,12 @@ def main():
         if job_url and job_url.strip().lower() in applied_urls:
             print(f"\n[{idx}/{len(matches)}] Skip: '{title}' at '{company}' (already processed).")
             skipped_count += 1
+            run_report.append({
+                "company": company,
+                "title": title,
+                "status": "Skipped ⏭️",
+                "reason": "Already processed in a previous execution"
+            })
             continue
             
         print(f"\n[{idx}/{len(matches)}] Processing match: '{title}' at '{company}'")
@@ -149,6 +156,12 @@ def main():
         if readiness_score < args.min_score:
             print(f"    Score {readiness_score}% below target threshold {args.min_score}%. Skipping.")
             skipped_count += 1
+            run_report.append({
+                "company": company,
+                "title": title,
+                "status": "Filtered 📉",
+                "reason": f"Readiness score ({readiness_score}%) below threshold ({args.min_score}%)"
+            })
             continue
             
         # 6b. Tailor Resume & Cover Letter
@@ -221,20 +234,70 @@ def main():
                 applied_count += 1
                 
                 if submit_mode == True:
+                    status_label = "Submitted ✅"
+                    reason_str = "Form submitted live to job board"
                     send_notification(f"Submitted application for **{company}** - *{title}* (Readiness: {readiness_score}%, ATS: {ats_score}%)", "success")
                 else:
+                    status_label = "Pending Review ⏳"
+                    reason_str = "Form filled and placed in HITL Review Queue"
                     send_notification(f"Application for **{company}** - *{title}* filled and placed in Review Queue (Readiness: {readiness_score}%, ATS: {ats_score}%)", "review")
+                
+                run_report.append({
+                    "company": company,
+                    "title": title,
+                    "status": status_label,
+                    "reason": reason_str,
+                    "readiness": readiness_score,
+                    "ats": ats_score
+                })
                 
         except Exception as apply_err:
             error_msg = f"Automation failed for **{company}** - *{title}*: {apply_err}"
             print(f"    ❌ {error_msg}")
             send_notification(error_msg, "error")
+            run_report.append({
+                "company": company,
+                "title": title,
+                "status": "Failed ❌",
+                "reason": str(apply_err),
+                "readiness": readiness_score,
+                "ats": ats_score
+            })
             
     summary_msg = f"Automated Pipeline Execution Complete.\nProcessed: {applied_count} applied/queued | {skipped_count} skipped/filtered"
     print(f"\n=======================================================")
     print(f"🏁 {summary_msg}")
     print("=======================================================\n")
-    send_notification(summary_msg, "success" if applied_count > 0 else "info")
+    
+    # Compile detailed report for Telegram
+    report_lines = [
+        f"**Daily Execution Report**",
+        f"Date: *{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*",
+        f"Mode: **{'Live Submission' if args.submit else 'Simulation / Review'}**",
+        f"",
+        f"**Summary:**",
+        f"• Total Processed: {applied_count + skipped_count}",
+        f"• Applied/Queued: {applied_count}",
+        f"• Skipped/Filtered: {skipped_count}",
+        f"",
+        f"**Processed Listings Details:**"
+    ]
+    
+    for r_idx, r in enumerate(run_report, 1):
+        line = f"{r_idx}. **{r['company']}** - *{r['title']}*\n"
+        line += f"   • Status: {r['status']}\n"
+        if "readiness" in r and "ats" in r:
+            line += f"   • Scores: Readiness {r['readiness']}% | ATS {r['ats']}%\n"
+        line += f"   • Details: {r['reason']}"
+        report_lines.append(line)
+        
+    full_report = "\n".join(report_lines)
+    
+    # Telegram character limit is 4096, truncate safely if needed
+    if len(full_report) > 4000:
+        full_report = full_report[:3950] + "\n\n*... (Report truncated due to length)*"
+        
+    send_notification(full_report, "success" if applied_count > 0 else "info")
 
 if __name__ == "__main__":
     main()

@@ -1363,6 +1363,31 @@ elif page == "Application Analytics":
                 score_df = score_df.rename(columns={"readiness_score": "Readiness Score", "ats_score": "ATS Score"})
                 st.line_chart(score_df.set_index("timestamp"))
                 
+            # Date-grouped daily summary
+            st.divider()
+            st.subheader("📅 Daily Applications Summary")
+            
+            # Extract date (YYYY-MM-DD) from timestamp
+            df["date"] = df["timestamp"].str.split(" ").str[0]
+            
+            daily_col1, daily_col2 = st.columns([1.5, 1.2])
+            
+            with daily_col1:
+                st.markdown("**Applications Count by Date:**")
+                daily_counts = df.groupby("date").size().reset_index(name="Applications")
+                st.bar_chart(daily_counts.set_index("date"))
+                
+            with daily_col2:
+                st.markdown("**Daily Status Breakdown Table:**")
+                daily_breakdown = df.groupby(["date", "status"]).size().unstack(fill_value=0)
+                # Ensure standard statuses exist in columns for consistency
+                for s in ["Submitted", "Simulated", "Pending Review", "Failed"]:
+                    if s not in daily_breakdown.columns:
+                        daily_breakdown[s] = 0
+                # Re-order and sort descending
+                daily_breakdown = daily_breakdown[["Submitted", "Simulated", "Pending Review", "Failed"]].sort_index(ascending=False)
+                st.dataframe(daily_breakdown, use_container_width=True)
+                
             # Log Table
             st.divider()
             st.subheader("📋 Application History Log")
