@@ -44,9 +44,10 @@ For a deeper dive into data flows and schemas, see the complete [Architecture Sp
 *   🌐 **Portfolio Web Designer:** Dynamically designs readable Markdown-based developer portfolios with direct downloads for Markdown and styled HTML formats.
 *   🧠 **Interactive Interview Recruiter:** Conducts live mock interview sessions tailored to a chosen job role, evaluates answers against profile items (TypeScript, WebSockets, Next.js), writes constructive feedback, and saves history.
 *   💼 **Career Advisor & Performance Report:** Reads persistent interview logs from ChromaDB to analyze and output a structured coaching report identifying your consistently weak areas, strong topics, and next-step roadmap.
-*   🔍 **Automated Daily Job Pipeline (NEW):** Leverages `apscheduler` and `playwright` to run a background crawler every morning at 8:00 AM, scraping and indexing developer roles from public job boards (Hacker News Jobs) into ChromaDB.
-*   📊 **Application Readiness Score (NEW):** Calculates a combined readiness grade (0-100%) against a selected job description, detailing strengths checklists, skill gaps, and custom study guides.
-*   ✨ **Resume Tailoring Agent (NEW):** Dynamically alters bullet points, skill priorities, and summary statements to align with target job requirements (preserving candidate truthfulness) with downloads in Markdown, HTML, and PDF.
+*   🔍 **Automated Daily Job Pipeline:** Multi-source job scraper pulling from **RemoteOK**, **Jobicy**, and **Hacker News Jobs** — all free, no auth required. Runs daily via `apscheduler`, indexes listings into ChromaDB, and auto-applies to matching remote dev roles.
+*   📊 **Application Readiness Score:** AI + keyword-based readiness grading (0-100%) against each job. Falls back to skill-overlap scoring when API limits hit, so no job gets a blind default score.
+*   🤖 **Auto-Apply Browser Agent:** Uses Playwright stealth mode to navigate real job boards (Greenhouse, Lever, Workable, etc.), fill application forms, upload tailored resumes, and answer custom questions via Gemini.
+*   ✨ **Resume Tailoring Agent:** Dynamically alters bullet points, skill priorities, and summary statements to align with target job requirements (preserving candidate truthfulness) with downloads in Markdown, HTML, and PDF.
 
 ---
 
