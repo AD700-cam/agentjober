@@ -1,4 +1,6 @@
 # run_pipeline.py
+# Main orchestrator: scrapes jobs from multiple free sources, matches against profile,
+# tailors resume, and auto-applies via browser automation.
 
 import os
 import sys
@@ -22,7 +24,7 @@ if sys.stdout.encoding != 'utf-8':
 
 from tools.load_profile import load_profile
 from tools.export_utils import markdown_to_pdf
-from scrapers.job_scraper import scrape_jobs
+from tools.url_resolver import resolve_application_url, is_ats_url
 from memory.vector_store import search_matching_jobs, save_scraped_job
 from agents.readiness_agent import evaluate_application_readiness
 from agents.resume_tailor_agent import tailor_resume
@@ -32,11 +34,63 @@ from agents.auto_submitter_agent import AutoSubmitterAgent
 from tools.browser_launcher import launch_browser_with_context
 from tools.notifier import send_notification
 
+
+def scrape_all_sources(max_jobs: int = 20) -> list[dict]:
+    """Aggregates jobs from all free sources: RemoteOK, Jobicy, and Hacker News."""
+    all_jobs = []
+    
+    # Source 1: RemoteOK (free JSON API — best for remote dev roles)
+    try:
+        from scrapers.remoteok_scraper import scrape_remoteok
+        print("\n📡 [Source 1/3] Scraping RemoteOK...")
+        remoteok_jobs = scrape_remoteok(max_jobs=max_jobs)
+        all_jobs.extend(remoteok_jobs)
+        print(f"  ✅ RemoteOK: {len(remoteok_jobs)} relevant jobs")
+    except Exception as e:
+        print(f"  ⚠️ RemoteOK scraper failed: {e}")
+    
+    # Source 2: Jobicy (free API — remote-only job board)
+    try:
+        from scrapers.jobicy_scraper import scrape_jobicy
+        print("\n📡 [Source 2/3] Scraping Jobicy...")
+        jobicy_jobs = scrape_jobicy(max_jobs=max_jobs)
+        all_jobs.extend(jobicy_jobs)
+        print(f"  ✅ Jobicy: {len(jobicy_jobs)} relevant jobs")
+    except Exception as e:
+        print(f"  ⚠️ Jobicy scraper failed: {e}")
+    
+    # Source 3: Hacker News Jobs (existing scraper)
+    try:
+        from scrapers.job_scraper import scrape_jobs
+        print("\n📡 [Source 3/3] Scraping Hacker News Jobs...")
+        hn_jobs = scrape_jobs(max_jobs=min(max_jobs, 10))
+        # Tag HN jobs
+        for j in hn_jobs:
+            j["source"] = "hackernews"
+        all_jobs.extend(hn_jobs)
+        print(f"  ✅ Hacker News: {len(hn_jobs)} jobs")
+    except Exception as e:
+        print(f"  ⚠️ Hacker News scraper failed: {e}")
+    
+    print(f"\n📊 Total jobs scraped from all sources: {len(all_jobs)}")
+    
+    # Save combined job store
+    combined_path = os.path.join(project_root, "scrapers", "job_store.json")
+    try:
+        with open(combined_path, "w", encoding="utf-8") as f:
+            json.dump(all_jobs, f, indent=2)
+    except Exception:
+        pass
+    
+    return all_jobs
+
+
 def main():
     parser = argparse.ArgumentParser(description="End-to-end Job Search, Tailoring, and Application Pipeline")
     parser.add_argument("--submit", action="store_true", help="Enable actual submission of job forms (Simulation mode by default)")
-    parser.add_argument("--min-score", type=int, default=60, help="Minimum readiness score threshold to trigger applications (default: 60)")
-    parser.add_argument("--max-jobs", type=int, default=15, help="Maximum number of job listings to crawl (default: 15)")
+    parser.add_argument("--min-score", type=int, default=40, help="Minimum readiness score threshold to trigger applications (default: 40)")
+    parser.add_argument("--max-jobs", type=int, default=20, help="Maximum number of job listings to crawl per source (default: 20)")
+    parser.add_argument("--max-apply", type=int, default=8, help="Maximum number of applications to submit per run (default: 8)")
     parser.add_argument("--profile-path", type=str, default="data/master_profile.json", help="Path to candidate profile JSON")
     
     args = parser.parse_args()
@@ -44,7 +98,7 @@ def main():
     print("\n=======================================================")
     print("🚀 Starting AI Career Assistant Automated Pipeline")
     print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Modes: Submission={args.submit} | MinScore={args.min_score} | MaxJobs={args.max_jobs}")
+    print(f"Modes: Submission={args.submit} | MinScore={args.min_score} | MaxJobs={args.max_jobs} | MaxApply={args.max_apply}")
     print("=======================================================\n")
     
     send_notification(f"Pipeline execution initiated (Submit={args.submit}, MinScore={args.min_score}, MaxJobs={args.max_jobs})", "info")
@@ -66,18 +120,18 @@ def main():
         print(f"❌ Failed to load profile: {e}")
         sys.exit(1)
         
-    # 2. Run background jobs crawler
-    print("\n🔍 Fetching latest job listings from Hacker News...")
-    try:
-        crawled_jobs = scrape_jobs(max_jobs=args.max_jobs)
-        print(f"✅ Scraped and indexed {len(crawled_jobs)} listings.")
-    except Exception as e:
-        print(f"⚠️ Job crawling encountered an error: {e}. Attempting matching on existing database.")
-        
-    # 3. Read crawled jobs database backup to retrieve job URLs
-    crawled_db = []
+    # 2. Scrape jobs from ALL free sources (not just HN anymore)
+    print("\n🔍 Fetching latest job listings from multiple free sources...")
+    all_scraped = scrape_all_sources(max_jobs=args.max_jobs)
+    
+    if not all_scraped:
+        print("⚠️ No jobs scraped from any source. Attempting matching on existing database only.")
+    
+    # 3. Build a lookup map of scraped jobs by title+company for URL resolution
+    crawled_db = all_scraped if all_scraped else []
+    # Also load any previously saved jobs
     json_path = os.path.join(project_root, "scrapers", "job_store.json")
-    if os.path.exists(json_path):
+    if not crawled_db and os.path.exists(json_path):
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 crawled_db = json.load(f)
@@ -89,12 +143,14 @@ def main():
     matches = search_matching_jobs(skills_list, n_results=args.max_jobs)
     if not matches:
         print("ℹ️ No matched jobs found in database. Ending pipeline.")
+        send_notification("Pipeline ended: No matching jobs found in database.", "info")
         sys.exit(0)
         
-    print(f"📋 Found {len(matches)} potential job matches.")
+    print(f"📋 Found {len(matches)} potential job matches from vector store.")
     
     # 5. Load application history to prevent duplicates
     applied_urls = set()
+    applied_titles = set()  # Also track by title+company to avoid duplicates without URL
     history_path = os.path.join(project_root, "data", "application_history.json")
     if os.path.exists(history_path):
         try:
@@ -104,6 +160,10 @@ def main():
                     url = record.get("url")
                     if url:
                         applied_urls.add(url.strip().lower())
+                    # Track title+company combo too
+                    key = f"{record.get('company', '').lower()}|{record.get('title', '').lower()}"
+                    if key != "|":
+                        applied_titles.add(key)
         except Exception:
             pass
             
@@ -113,10 +173,15 @@ def main():
     run_report = []
     
     for idx, m in enumerate(matches, 1):
+        # Stop if we've reached the max apply limit
+        if applied_count >= args.max_apply:
+            print(f"\n🛑 Reached max apply limit ({args.max_apply}). Stopping.")
+            break
+        
         # Introduce rate-limiting delay between jobs to prevent API quota issues (transient 429)
         if idx > 1:
-            print("\n⏳ Sleeping 10 seconds between job listings to respect API rate limits...")
-            time.sleep(10)
+            print("\n⏳ Sleeping 8 seconds between job listings to respect API rate limits...")
+            time.sleep(8)
             
         meta = m.get("metadata", {})
         title = meta.get("title", "Unknown Title")
@@ -124,15 +189,24 @@ def main():
         desc = m.get("document", "")
         job_id = m.get("id")
         
-        # Resolve original URL
+        # Resolve original URL from scraped database
         job_url = ""
         for j in crawled_db:
             if j.get("title") == title and j.get("company") == company:
                 job_url = j.get("url", "")
                 break
-                
-        # Skip if already applied
-        if job_url and job_url.strip().lower() in applied_urls:
+        
+        # Also try partial matching if exact match fails
+        if not job_url:
+            for j in crawled_db:
+                if (j.get("company", "").lower() == company.lower() or
+                    j.get("title", "").lower() == title.lower()):
+                    job_url = j.get("url", "")
+                    break
+                    
+        # Skip if already applied (by URL or title+company)
+        title_key = f"{company.lower()}|{title.lower()}"
+        if (job_url and job_url.strip().lower() in applied_urls) or title_key in applied_titles:
             print(f"\n[{idx}/{len(matches)}] Skip: '{title}' at '{company}' (already processed).")
             skipped_count += 1
             run_report.append({
@@ -143,11 +217,40 @@ def main():
             })
             continue
             
+        # Skip file:// URLs (test forms) in production
+        if job_url and job_url.startswith("file://"):
+            print(f"\n[{idx}/{len(matches)}] Skip: '{title}' at '{company}' (test form URL).")
+            skipped_count += 1
+            continue
+            
         print(f"\n[{idx}/{len(matches)}] Processing match: '{title}' at '{company}'")
         if job_url:
             print(f"    URL: {job_url}")
+        
+        # 6a. Resolve the actual application form URL
+        actual_apply_url = None
+        if job_url:
+            print("    🔗 Resolving application form URL...")
+            actual_apply_url = resolve_application_url(job_url)
+            if actual_apply_url:
+                print(f"    ✅ Resolved apply URL: {actual_apply_url}")
+            else:
+                # Use the original URL as fallback — the AutoSubmitter will try to find Apply buttons
+                actual_apply_url = job_url
+                print(f"    ℹ️ Using original listing URL (will try to find Apply button)")
+        
+        if not actual_apply_url:
+            print(f"    ⚠️ No URL available for this job. Skipping.")
+            skipped_count += 1
+            run_report.append({
+                "company": company,
+                "title": title,
+                "status": "Skipped 🔗",
+                "reason": "No application URL available"
+            })
+            continue
             
-        # 6a. Evaluate readiness
+        # 6b. Evaluate readiness
         evaluation = evaluate_application_readiness(profile, desc)
         readiness_score = evaluation.get("match_score", 50)
         print(f"    Readiness Score: {readiness_score}%")
@@ -164,8 +267,8 @@ def main():
             })
             continue
             
-        # 6b. Tailor Resume & Cover Letter
-        print("    Refining candidate documentation for this listing...")
+        # 6c. Tailor Resume & Cover Letter
+        print("    ✂️ Tailoring resume for ATS optimization...")
         tailored_resume = tailor_resume(profile, desc)
         
         # Create unique directory for tailored outputs
@@ -202,12 +305,9 @@ def main():
         ats_score = ats_report.get("ats_score", 50)
         print(f"    ATS Compatibility: {ats_score}% (Parsability: {ats_report.get('parsability_rating', 'Good')})")
         
-        # 6c. Execute auto-apply agent
-        print("    Running form automation browser agent...")
+        # 6d. Execute auto-apply agent
+        print("    🤖 Running form automation browser agent...")
         from playwright.sync_api import sync_playwright
-        
-        # If no real URL exists, default to test form sandbox to prevent crash
-        target_url = job_url if job_url else f"file:///{os.path.abspath('scratch/test_form.html').replace('\\', '/')}"
         
         apply_metadata = {
             "company": company,
@@ -226,7 +326,7 @@ def main():
                 # Instantiate AutoSubmitter with the custom tailored PDF resume path
                 agent = AutoSubmitterAgent(profile_path=args.profile_path, resume_path=resume_pdf_path)
                 
-                for log_entry in agent.fill_job_application(page, target_url, submit=submit_mode, metadata=apply_metadata):
+                for log_entry in agent.fill_job_application(page, actual_apply_url, submit=submit_mode, metadata=apply_metadata):
                     print(f"      > {log_entry}")
                     
                 browser.close()

@@ -8,3 +8,4 @@ playwright
 playwright-stealth
 jinja2
 apscheduler
+httpx

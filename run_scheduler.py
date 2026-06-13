@@ -24,8 +24,10 @@ def run_job():
     python_exe = sys.executable
     script_path = os.path.join(project_root, "run_pipeline.py")
     
+    # Build command arguments
+    args = [python_exe, script_path, "--min-score", "40", "--max-apply", "8"]
+    
     # Propagate submission flag if scheduler was started with it or via env variable
-    args = [python_exe, script_path]
     if "--submit" in sys.argv or os.getenv("AUTO_SUBMIT", "false").lower() == "true":
         args.append("--submit")
         
