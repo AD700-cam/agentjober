@@ -1,5 +1,5 @@
 # Use the official pre-configured Playwright image with Python & browser binaries
-FROM mcr.microsoft.com/playwright/python:v1.44.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
 
 # Prevent Python from buffering outputs (ensures logs show up in Render dashboard instantly)
 ENV PYTHONUNBUFFERED=1

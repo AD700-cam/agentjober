@@ -82,3 +82,79 @@ def send_notification(message: str, notification_type: str = "info"):
             
     # Always log to console as fallback
     print(f"[Notification - {notification_type.upper()}] {message}")
+
+def send_daily_summary(target_date: str = None) -> bool:
+    """
+    Reads the application history and compiles a detailed report for the given target_date (YYYY-MM-DD).
+    Sends the report to Telegram (and Discord if configured).
+    If target_date is None, defaults to the current date.
+    Returns True if successfully sent (or skipped because no applications), False on error.
+    """
+    import json
+    from datetime import datetime
+    
+    if not target_date:
+        target_date = datetime.now().strftime("%Y-%m-%d")
+        
+    history_path = "data/application_history.json"
+    if not os.path.exists(history_path):
+        send_notification(f"📅 **Daily Summary Report ({target_date})**\nNo application history found.", "info")
+        return True
+        
+    try:
+        with open(history_path, "r", encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception as e:
+        print(f"[Daily Summary Error] Failed to read application history: {e}")
+        return False
+        
+    # Filter for the target date
+    day_entries = [entry for entry in history if entry.get("timestamp", "").startswith(target_date)]
+    
+    if not day_entries:
+        msg = f"📅 **Daily Summary Report ({target_date})**\nNo applications were processed today."
+        send_notification(msg, "info")
+        return True
+        
+    # Group and count
+    total = len(day_entries)
+    submitted = sum(1 for e in day_entries if e.get("status") == "Submitted")
+    simulated = sum(1 for e in day_entries if e.get("status") == "Simulated")
+    pending = sum(1 for e in day_entries if e.get("status") == "Pending Review")
+    failed = sum(1 for e in day_entries if e.get("status") == "Failed")
+    
+    report_lines = [
+        f"📅 **Daily Summary Report ({target_date})**",
+        f"**Overview:**",
+        f"• Total Processed: {total}",
+        f"• Submitted: {submitted}",
+        f"• Pending Review: {pending}",
+        f"• Simulated: {simulated}",
+        f"• Failed: {failed}",
+        f"",
+        f"**Detailed Activity Log:**"
+    ]
+    
+    for idx, e in enumerate(day_entries, 1):
+        company = e.get("company", "Unknown Company")
+        title = e.get("title", "Unknown Title")
+        status = e.get("status", "Unknown Status")
+        readiness = e.get("readiness_score", "N/A")
+        ats = e.get("ats_score", "N/A")
+        url = e.get("url", "#")
+        
+        status_emoji = "✅" if status == "Submitted" else "⏳" if status == "Pending Review" else "📊" if status == "Simulated" else "❌"
+        
+        line = f"{idx}. **{company}** - *{title}*\n"
+        line += f"   • Status: {status_emoji} {status}\n"
+        line += f"   • Scores: Readiness {readiness}% | ATS {ats}%\n"
+        if url and url != "#":
+            line += f"   • URL: {url}"
+        report_lines.append(line)
+        
+    full_report = "\n".join(report_lines)
+    
+    # Send notification
+    send_notification(full_report, "success" if (submitted > 0 or pending > 0) else "info")
+    return True
+

@@ -12,6 +12,8 @@ project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from tools.notifier import send_daily_summary
+
 # Force UTF-8 encoding support
 if sys.stdout.encoding != 'utf-8':
     try:
